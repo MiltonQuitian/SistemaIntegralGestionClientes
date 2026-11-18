@@ -32,3 +32,43 @@ class Entidad(ABC):
     @abstractmethod
     def describir(self):
         pass
+
+# ------------------------- Cliente -------------------------
+# Clase Cliente: hereda de Entidad, así cada cliente recibe un id automático
+class Cliente(Entidad):
+    # Constructor: recibe los datos personales del cliente
+    def __init__(self, nombre, documento, correo, telefono):
+        # Se llama al constructor de Entidad para asignar el id
+        super().__init__()
+        # El nombre es obligatorio y debe tener mínimo 3 letras (sin contar espacios)
+        if nombre is None or len(nombre.strip()) < 3:
+            # Si no cumple se lanza la excepción personalizada de cliente
+            raise ClienteInvalidoError("El nombre es obligatorio (mínimo 3 letras)")
+        # El documento solo puede tener números y debe ser de 6 a 12 dígitos
+        if documento is None or not str(documento).isdigit() or not 6 <= len(str(documento)) <= 12:
+            raise ClienteInvalidoError("El documento debe tener entre 6 y 12 números")
+        # Validación básica del correo: debe tener @ y punto
+        if correo is None or "@" not in correo or "." not in correo:
+            raise ClienteInvalidoError("El correo no es válido")
+        # El teléfono debe ser numérico y de 10 dígitos (como un celular)
+        if telefono is None or not str(telefono).isdigit() or len(str(telefono)) != 10:
+            raise ClienteInvalidoError("El teléfono debe tener 10 dígitos")
+        # Atributos privados con doble guion bajo (encapsulación):
+        # no se pueden cambiar directamente desde fuera de la clase
+        self.__nombre = nombre.strip()          # se guarda sin espacios al inicio y al final
+        self.__documento = str(documento)       # se guarda como texto
+        self.__correo = correo.strip().lower()  # se guarda en minúsculas
+        self.__telefono = str(telefono)         # se guarda como texto
+
+    # Getter para poder leer el nombre desde fuera de la clase
+    def get_nombre(self):
+        return self.__nombre
+
+    # Getter del documento, sirve para revisar que no se repitan clientes
+    def get_documento(self):
+        return self.__documento
+
+    # Se implementa el método abstracto describir() de Entidad (polimorfismo)
+    def describir(self):
+        # Devuelve un texto con los datos principales del cliente
+        return f"Cliente #{self.id}: {self.__nombre} (doc {self.__documento}, {self.__correo})"
