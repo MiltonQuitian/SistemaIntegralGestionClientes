@@ -72,3 +72,33 @@ class Cliente(Entidad):
     def describir(self):
         # Devuelve un texto con los datos principales del cliente
         return f"Cliente #{self.id}: {self.__nombre} (doc {self.__documento}, {self.__correo})"
+
+class Servicio(Entidad, ABC):
+    def __init__(self, nombre, tarifa, disponible=True):
+        super().__init__()
+        if nombre is None or nombre.strip() == "":
+            raise ServicioInvalidoError("El servicio necesita un nombre")
+        if not isinstance(tarifa, (int, float)) or tarifa <= 0:
+            raise ServicioInvalidoError("La tarifa debe ser un número mayor a 0")
+        self.nombre = nombre.strip()
+        self.tarifa = tarifa
+        self.disponible = disponible
+
+    @abstractmethod
+    def costo_base(self, horas):
+        pass
+
+    @abstractmethod
+    def validar_horas(self, horas):
+        pass
+
+    # Método sobrecargado (parámetros opcionales):
+    #   calcular_costo(2) | calcular_costo(2, 0.10) | calcular_costo(2, 0.10, 0)
+    def calcular_costo(self, horas, descuento=0, impuesto=IVA):
+        self.validar_horas(horas)
+        if descuento < 0 or descuento >= 1 or impuesto < 0:
+            raise CalculoInconsistenteError("Descuento o impuesto fuera de rango")
+        total = self.costo_base(horas) * (1 - descuento) * (1 + impuesto)
+        if total <= 0:
+            raise CalculoInconsistenteError("El costo calculado no es válido")
+        return round(total, 2)
