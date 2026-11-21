@@ -402,21 +402,7 @@ def abrir_ventana():
     # Botón que crea el servicio
     ttk.Button(tab_servicios, text="Crear servicio", command=boton_crear_servicio).grid(row=5, column=1, sticky="e", padx=5, pady=5)
      
-  # ---------- Actualizar listas y listas desplegables ----------
-    # actualizar(): cada estudiante agrega SOLO las líneas de su pestaña
-    def actualizar():
-        # --- COMMIT 7 (Estudiante A): clientes ---
-        lista_clientes.delete(0, "end")
-        for c in clientes:
-            lista_clientes.insert("end", c.describir())
-        # --- COMMIT 8 (Estudiante B): servicios ---
-        # Se borra la lista de servicios y se vuelve a llenar con los actuales
-        lista_servicios.delete(0, "end")
-        for sv in servicios:
-            lista_servicios.insert("end", sv.describir())
-
-    ventana.mainloop()
-
+ 
 
 if __name__ == "__main__":
     abrir_ventana()
