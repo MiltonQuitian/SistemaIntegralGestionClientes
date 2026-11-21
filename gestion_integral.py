@@ -73,6 +73,7 @@ class Cliente(Entidad):
         # Devuelve un texto con los datos principales del cliente
         return f"Cliente #{self.id}: {self.__nombre} (doc {self.__documento}, {self.__correo})"
 
+# ------------------------- Servicio -------------------------
 class Servicio(Entidad, ABC):
     def __init__(self, nombre, tarifa, disponible=True):
         super().__init__()
@@ -104,7 +105,7 @@ class Servicio(Entidad, ABC):
         return round(total, 2)
 
 
-# Clase ReservaSala: es un tipo de servicio, por eso hereda de Servicio
+# ------------------------- ReservaSala -------------------------
 class ReservaSala(Servicio):
     # Constructor: además del nombre y la tarifa, la sala necesita su capacidad
     def __init__(self, nombre, tarifa, capacidad, disponible=True):
@@ -137,7 +138,7 @@ class ReservaSala(Servicio):
         return f"Sala '{self.nombre}' (capacidad {self.capacidad}, ${self.tarifa}/h)"
 
 
-# Clase AlquilerEquipo: otro tipo de servicio, también hereda de Servicio
+# ------------------------- AlquilerEquipo -------------------------
 class AlquilerEquipo(Servicio):
     # Valor fijo de fianza que se cobra en cada alquiler
     FIANZA = 20000
@@ -169,7 +170,7 @@ class AlquilerEquipo(Servicio):
         return f"Equipo '{self.nombre}' x{self.unidades} (${self.tarifa}/h c/u)"
 
 
-# Clase AsesoriaEspecializada: el tercer tipo de servicio, hereda de Servicio
+# ------------------------- AsesoriaEspecializada -------------------------
 class AsesoriaEspecializada(Servicio):
     # Niveles del asesor y por cuánto se multiplica la tarifa en cada uno
     NIVELES = {"junior": 1, "senior": 1.5, "experto": 2}
@@ -200,6 +201,7 @@ class AsesoriaEspecializada(Servicio):
         # Devuelve el nombre, el nivel y la tarifa por hora
         return f"Asesoría '{self.nombre}' nivel {self.nivel} (${self.tarifa}/h)"
 
+# ------------------------- Reserva -------------------------
 class Reserva(Entidad):
     def __init__(self, cliente, servicio, horas):
         super().__init__()
@@ -241,7 +243,8 @@ class Reserva(Entidad):
 
 
 # ------------------------- Listas internas y operaciones -------------------------
-# Listas donde se guardan los datos del sistema (no se usa base de datos)
+# Listas donde se guardan los datos del sistema
+
 clientes = []
 servicios = []
 reservas = []
@@ -402,72 +405,72 @@ def abrir_ventana():
     # Botón que crea el servicio
     ttk.Button(tab_servicios, text="Crear servicio", command=boton_crear_servicio).grid(row=5, column=1, sticky="e", padx=5, pady=5)
 
-# ---------- Pestaña Reservas ----------
-  tab_reservas = ttk.Frame(pestanas)
-  pestanas.add(tab_reservas, text="Reservas")
-  ttk.Label(tab_reservas, text="Cliente").grid(row=0, column=0, sticky="w", padx=5, pady=3)
-  combo_cliente = ttk.Combobox(tab_reservas, state="readonly", width=32)
-  combo_cliente.grid(row=0, column=1, padx=5)
-  ttk.Label(tab_reservas, text="Servicio").grid(row=1, column=0, sticky="w", padx=5, pady=3)
-  combo_servicio = ttk.Combobox(tab_reservas, state="readonly", width=32)
-  combo_servicio.grid(row=1, column=1, padx=5)
-  ttk.Label(tab_reservas, text="Horas").grid(row=2, column=0, sticky="w", padx=5, pady=3)
-  entrada_horas = ttk.Entry(tab_reservas, width=35)
-  entrada_horas.grid(row=2, column=1, padx=5)
-  ttk.Label(tab_reservas, text="Descuento % (opcional)").grid(row=3, column=0, sticky="w", padx=5, pady=3)
-  entrada_descuento = ttk.Entry(tab_reservas, width=35)
-  entrada_descuento.grid(row=3, column=1, padx=5)
-  lista_reservas = tk.Listbox(tab_reservas, width=80, height=8)
-  lista_reservas.grid(row=5, column=0, columnspan=2, padx=5, pady=8)
-
-  def boton_reservar():
-      try:
-          if combo_cliente.current() < 0 or combo_servicio.current() < 0:
-              raise ReservaInvalidaError("Seleccione un cliente y un servicio")
-          horas = float(entrada_horas.get())
-          descuento = float(entrada_descuento.get() or 0) / 100
-          crear_reserva(clientes[combo_cliente.current()], servicios[combo_servicio.current()],
-                        horas, descuento)
-      except (ErrorFJ, ValueError) as e:
-          logging.error(f"Interfaz - error al reservar: {e}")
-          messagebox.showerror("Error", str(e))
-      else:
-          messagebox.showinfo("Listo", "Reserva confirmada")
-      finally:
-          actualizar()
-
-  def boton_cancelar():
-      seleccion = lista_reservas.curselection()
-      try:
-          if not seleccion:
-              raise ReservaInvalidaError("Seleccione una reserva de la lista")
-          reservas[seleccion[0]].cancelar()
-          logging.info(f"Reserva #{reservas[seleccion[0]].id} cancelada")
-      except ErrorFJ as e:
-          logging.error(f"Interfaz - error al cancelar: {e}")
-          messagebox.showerror("Error", str(e))
-      finally:
-          actualizar()
-
-  ttk.Button(tab_reservas, text="Reservar", command=boton_reservar).grid(row=4, column=0, pady=5)
-  ttk.Button(tab_reservas, text="Cancelar seleccionada", command=boton_cancelar).grid(row=4, column=1, pady=5)
-
-  # ---------- Actualizar listas y listas desplegables ----------
-  def actualizar():
-      lista_clientes.delete(0, "end")
-      for c in clientes:
-          lista_clientes.insert("end", c.describir())
-      lista_servicios.delete(0, "end")
-      for sv in servicios:
-          lista_servicios.insert("end", sv.describir())
-      lista_reservas.delete(0, "end")
-      for r in reservas:
-          lista_reservas.insert("end", r.describir())
-      combo_cliente["values"] = [c.get_nombre() for c in clientes]
-      combo_servicio["values"] = [sv.nombre for sv in servicios]
-
-  ventana.mainloop()
-
+    # ---------- Pestaña Reservas ----------
+    tab_reservas = ttk.Frame(pestanas)
+    pestanas.add(tab_reservas, text="Reservas")
+    ttk.Label(tab_reservas, text="Cliente").grid(row=0, column=0, sticky="w", padx=5, pady=3)
+    combo_cliente = ttk.Combobox(tab_reservas, state="readonly", width=32)
+    combo_cliente.grid(row=0, column=1, padx=5)
+    ttk.Label(tab_reservas, text="Servicio").grid(row=1, column=0, sticky="w", padx=5, pady=3)
+    combo_servicio = ttk.Combobox(tab_reservas, state="readonly", width=32)
+    combo_servicio.grid(row=1, column=1, padx=5)
+    ttk.Label(tab_reservas, text="Horas").grid(row=2, column=0, sticky="w", padx=5, pady=3)
+    entrada_horas = ttk.Entry(tab_reservas, width=35)
+    entrada_horas.grid(row=2, column=1, padx=5)
+    ttk.Label(tab_reservas, text="Descuento % (opcional)").grid(row=3, column=0, sticky="w", padx=5, pady=3)
+    entrada_descuento = ttk.Entry(tab_reservas, width=35)
+    entrada_descuento.grid(row=3, column=1, padx=5)
+    lista_reservas = tk.Listbox(tab_reservas, width=80, height=8)
+    lista_reservas.grid(row=5, column=0, columnspan=2, padx=5, pady=8)
+  
+    def boton_reservar():
+        try:
+            if combo_cliente.current() < 0 or combo_servicio.current() < 0:
+                raise ReservaInvalidaError("Seleccione un cliente y un servicio")
+            horas = float(entrada_horas.get())
+            descuento = float(entrada_descuento.get() or 0) / 100
+            crear_reserva(clientes[combo_cliente.current()], servicios[combo_servicio.current()],
+                          horas, descuento)
+        except (ErrorFJ, ValueError) as e:
+            logging.error(f"Interfaz - error al reservar: {e}")
+            messagebox.showerror("Error", str(e))
+        else:
+            messagebox.showinfo("Listo", "Reserva confirmada")
+        finally:
+            actualizar()
+  
+    def boton_cancelar():
+        seleccion = lista_reservas.curselection()
+        try:
+            if not seleccion:
+                raise ReservaInvalidaError("Seleccione una reserva de la lista")
+            reservas[seleccion[0]].cancelar()
+            logging.info(f"Reserva #{reservas[seleccion[0]].id} cancelada")
+        except ErrorFJ as e:
+            logging.error(f"Interfaz - error al cancelar: {e}")
+            messagebox.showerror("Error", str(e))
+        finally:
+            actualizar()
+  
+    ttk.Button(tab_reservas, text="Reservar", command=boton_reservar).grid(row=4, column=0, pady=5)
+    ttk.Button(tab_reservas, text="Cancelar seleccionada", command=boton_cancelar).grid(row=4, column=1, pady=5)
+  
+    # ---------- Actualizar listas y listas desplegables ----------
+    def actualizar():
+        lista_clientes.delete(0, "end")
+        for c in clientes:
+            lista_clientes.insert("end", c.describir())
+        lista_servicios.delete(0, "end")
+        for sv in servicios:
+            lista_servicios.insert("end", sv.describir())
+        lista_reservas.delete(0, "end")
+        for r in reservas:
+            lista_reservas.insert("end", r.describir())
+        combo_cliente["values"] = [c.get_nombre() for c in clientes]
+        combo_servicio["values"] = [sv.nombre for sv in servicios]
+  
+    ventana.mainloop()
+  
 if __name__ == "__main__":
     abrir_ventana()
 
