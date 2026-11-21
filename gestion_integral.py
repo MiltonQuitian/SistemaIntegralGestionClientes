@@ -102,3 +102,100 @@ class Servicio(Entidad, ABC):
         if total <= 0:
             raise CalculoInconsistenteError("El costo calculado no es válido")
         return round(total, 2)
+
+
+# Clase ReservaSala: es un tipo de servicio, por eso hereda de Servicio
+class ReservaSala(Servicio):
+    # Constructor: además del nombre y la tarifa, la sala necesita su capacidad
+    def __init__(self, nombre, tarifa, capacidad, disponible=True):
+        # Se llama al constructor de Servicio para que valide el nombre y la tarifa
+        super().__init__(nombre, tarifa, disponible)
+        # La capacidad tiene que ser un número entero mayor a 0
+        if not isinstance(capacidad, int) or capacidad <= 0:
+            # Si no cumple se lanza la excepción personalizada de servicio
+            raise ServicioInvalidoError("La capacidad debe ser un entero mayor a 0")
+        # Se guarda cuántas personas caben en la sala
+        self.capacidad = capacidad
+
+    # Se revisa que las horas tengan sentido para una sala
+    def validar_horas(self, horas):
+        # Las horas deben ser un número, mayor a 0 y máximo 12
+        if not isinstance(horas, (int, float)) or horas <= 0 or horas > 12:
+            raise ServicioInvalidoError("Una sala se reserva entre 1 y 12 horas")
+
+    # Costo de la sala: cada servicio lo calcula a su manera (polimorfismo)
+    def costo_base(self, horas):
+        # Si la sala es para más de 20 personas se cobra un 15% más
+        if self.capacidad > 20:  # recargo por sala grande
+            return self.tarifa * horas * 1.15
+        # Si no, se cobra la tarifa normal por las horas
+        return self.tarifa * horas
+
+    # Se implementa el método describir() para mostrar los datos de la sala
+    def describir(self):
+        # Devuelve un texto con el nombre, la capacidad y la tarifa por hora
+        return f"Sala '{self.nombre}' (capacidad {self.capacidad}, ${self.tarifa}/h)"
+
+
+# Clase AlquilerEquipo: otro tipo de servicio, también hereda de Servicio
+class AlquilerEquipo(Servicio):
+    # Valor fijo de fianza que se cobra en cada alquiler
+    FIANZA = 20000
+
+    # Constructor: aquí se necesita saber cuántas unidades del equipo se alquilan
+    def __init__(self, nombre, tarifa, unidades, disponible=True):
+        # Se llama al constructor de Servicio para que valide el nombre y la tarifa
+        super().__init__(nombre, tarifa, disponible)
+        # Las unidades deben ser un número entero mayor a 0
+        if not isinstance(unidades, int) or unidades <= 0:
+            # Si no cumple se lanza la excepción personalizada de servicio
+            raise ServicioInvalidoError("Las unidades deben ser un entero mayor a 0")
+        # Se guarda la cantidad de equipos
+        self.unidades = unidades
+
+    # Un equipo se puede alquilar máximo 72 horas (3 días)
+    def validar_horas(self, horas):
+        # Las horas deben ser un número, mayor a 0 y máximo 72
+        if not isinstance(horas, (int, float)) or horas <= 0 or horas > 72:
+            raise ServicioInvalidoError("Un equipo se alquila entre 1 y 72 horas")
+
+    # Costo del alquiler: tarifa por horas por unidades, más la fianza
+    def costo_base(self, horas):
+        return self.tarifa * horas * self.unidades + self.FIANZA
+
+    # Se implementa describir() para mostrar los datos del equipo
+    def describir(self):
+        # Devuelve el nombre del equipo, cuántas unidades son y la tarifa
+        return f"Equipo '{self.nombre}' x{self.unidades} (${self.tarifa}/h c/u)"
+
+
+# Clase AsesoriaEspecializada: el tercer tipo de servicio, hereda de Servicio
+class AsesoriaEspecializada(Servicio):
+    # Niveles del asesor y por cuánto se multiplica la tarifa en cada uno
+    NIVELES = {"junior": 1, "senior": 1.5, "experto": 2}
+
+    # Constructor: la asesoría necesita el nivel del asesor
+    def __init__(self, nombre, tarifa, nivel, disponible=True):
+        # Se llama al constructor de Servicio para que valide el nombre y la tarifa
+        super().__init__(nombre, tarifa, disponible)
+        # El nivel tiene que ser uno de los que están en NIVELES
+        if nivel not in self.NIVELES:
+            # Si no está se lanza la excepción personalizada de servicio
+            raise ServicioInvalidoError("Nivel inválido (junior, senior o experto)")
+        # Se guarda el nivel del asesor
+        self.nivel = nivel
+
+    # Una asesoría puede durar máximo 8 horas (una jornada)
+    def validar_horas(self, horas):
+        # Las horas deben ser un número, mayor a 0 y máximo 8
+        if not isinstance(horas, (int, float)) or horas <= 0 or horas > 8:
+            raise ServicioInvalidoError("Una asesoría dura entre 1 y 8 horas")
+
+    # Costo de la asesoría: tarifa por horas, multiplicado según el nivel
+    def costo_base(self, horas):
+        return self.tarifa * horas * self.NIVELES[self.nivel]
+
+    # Se implementa describir() para mostrar los datos de la asesoría
+    def describir(self):
+        # Devuelve el nombre, el nivel y la tarifa por hora
+        return f"Asesoría '{self.nombre}' nivel {self.nivel} (${self.tarifa}/h)"
