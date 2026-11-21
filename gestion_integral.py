@@ -277,3 +277,48 @@ class Reserva(Entidad):
                 f"{self.servicio.nombre}, {self.horas} h, total ${self.total}")
 
 
+# ------------------------- Listas internas y operaciones -------------------------
+# Listas donde se guardan los datos del sistema (no se usa base de datos)
+clientes = []
+servicios = []
+reservas = []
+
+
+# Función para registrar un cliente nuevo
+def registrar_cliente(nombre, documento, correo, telefono):
+    # Se crea el cliente; si algún dato está mal, la clase Cliente lanza el error
+    cliente = Cliente(nombre, documento, correo, telefono)
+    # Se recorre la lista para revisar que el documento no esté repetido
+    for c in clientes:
+        # Si ya hay un cliente con el mismo documento, no se deja registrar
+        if c.get_documento() == cliente.get_documento():
+            raise ClienteInvalidoError("Ya existe un cliente con ese documento")
+    # Si todo está bien, se agrega el cliente a la lista
+    clientes.append(cliente)
+    # Se deja registrado en el log que el cliente se creó
+    logging.info("Cliente registrado: " + cliente.describir())
+    # Se devuelve el cliente para poder usarlo después
+    return cliente
+
+
+# Función para agregar un servicio a la lista
+def agregar_servicio(servicio):
+    # Se guarda el servicio en la lista de servicios
+    servicios.append(servicio)
+    # Se deja registrado en el log que el servicio se creó
+    logging.info("Servicio creado: " + servicio.describir())
+    # Se devuelve el servicio
+    return servicio
+
+
+# Función para crear una reserva, el descuento es opcional
+def crear_reserva(cliente, servicio, horas, descuento=0):
+    # Se crea la reserva con el cliente, el servicio y las horas
+    reserva = Reserva(cliente, servicio, horas)
+    # Se guarda en la lista, así queda aunque luego falle (para ver el historial)
+    reservas.append(reserva)
+    # Se procesa la reserva: aquí se confirma y se calcula el costo
+    reserva.procesar(descuento)
+    # Se devuelve la reserva
+    return reserva
+
