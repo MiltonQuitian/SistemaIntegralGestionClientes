@@ -199,3 +199,81 @@ class AsesoriaEspecializada(Servicio):
     def describir(self):
         # Devuelve el nombre, el nivel y la tarifa por hora
         return f"Asesoría '{self.nombre}' nivel {self.nivel} (${self.tarifa}/h)"
+class Reserva(Entidad):
+  def __init__(self, cliente, servicio, horas):
+      super().__init__()
+      if not isinstance(cliente, Cliente) or not isinstance(servicio, Servicio):
+          raise ReservaInvalidaError("La reserva necesita un cliente y un servicio válidos")
+      self.cliente = cliente
+      self.servicio = servicio
+      self.horas = horas
+      self.estado = "PENDIENTE"
+      self.total = 0
+
+  def confirmar(self, descuento=0):
+      if self.estado != "PENDIENTE":
+          raise OperacionNoPermitidaError(f"No se puede confirmar una reserva {self.estado}")
+      if not self.servicio.disponible:
+          raise ServicioNoDisponibleError(f"'{self.servicio.nombre}' no está disponible")
+      self.total = self.servicio.calcular_costo(self.horas, descuento)
+      self.estado = "CONFIRMADA"
+
+  def cancelar(self):
+      if self.estado == "CANCELADA":
+          raise OperacionNoPermitidaError("La reserva ya estaba cancelada")
+      self.estado = "CANCELADA"
+
+  def procesar(self, descuento=0):
+      try:
+          self.confirmar(descuento)
+      except ErrorFJ as e:
+          # encadenamiento de excepciones: se conserva el error original
+          raise ReservaInvalidaError(f"Reserva #{self.id} fallida: {e}") from e
+      else:
+          logging.info(f"Reserva #{self.id} confirmada, total ${self.total}")
+      finally:
+          logging.info(f"Fin del procesamiento de la reserva #{self.id} ({self.estado})")
+
+  def describir(self):
+      return (f"Reserva #{self.id} [{self.estado}] {self.cliente.get_nombre()} -> "
+              f"{self.servicio.nombre}, {self.horas} h, total ${self.total}")
+class Reserva(Entidad):
+    def __init__(self, cliente, servicio, horas):
+        super().__init__()
+        if not isinstance(cliente, Cliente) or not isinstance(servicio, Servicio):
+            raise ReservaInvalidaError("La reserva necesita un cliente y un servicio válidos")
+        self.cliente = cliente
+        self.servicio = servicio
+        self.horas = horas
+        self.estado = "PENDIENTE"
+        self.total = 0
+
+    def confirmar(self, descuento=0):
+        if self.estado != "PENDIENTE":
+            raise OperacionNoPermitidaError(f"No se puede confirmar una reserva {self.estado}")
+        if not self.servicio.disponible:
+            raise ServicioNoDisponibleError(f"'{self.servicio.nombre}' no está disponible")
+        self.total = self.servicio.calcular_costo(self.horas, descuento)
+        self.estado = "CONFIRMADA"
+
+    def cancelar(self):
+        if self.estado == "CANCELADA":
+            raise OperacionNoPermitidaError("La reserva ya estaba cancelada")
+        self.estado = "CANCELADA"
+
+    def procesar(self, descuento=0):
+        try:
+            self.confirmar(descuento)
+        except ErrorFJ as e:
+            # encadenamiento de excepciones: se conserva el error original
+            raise ReservaInvalidaError(f"Reserva #{self.id} fallida: {e}") from e
+        else:
+            logging.info(f"Reserva #{self.id} confirmada, total ${self.total}")
+        finally:
+            logging.info(f"Fin del procesamiento de la reserva #{self.id} ({self.estado})")
+
+    def describir(self):
+        return (f"Reserva #{self.id} [{self.estado}] {self.cliente.get_nombre()} -> "
+                f"{self.servicio.nombre}, {self.horas} h, total ${self.total}")
+
+
