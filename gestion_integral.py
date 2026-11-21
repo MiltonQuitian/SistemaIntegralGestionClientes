@@ -199,44 +199,7 @@ class AsesoriaEspecializada(Servicio):
     def describir(self):
         # Devuelve el nombre, el nivel y la tarifa por hora
         return f"Asesoría '{self.nombre}' nivel {self.nivel} (${self.tarifa}/h)"
-class Reserva(Entidad):
-  def __init__(self, cliente, servicio, horas):
-      super().__init__()
-      if not isinstance(cliente, Cliente) or not isinstance(servicio, Servicio):
-          raise ReservaInvalidaError("La reserva necesita un cliente y un servicio válidos")
-      self.cliente = cliente
-      self.servicio = servicio
-      self.horas = horas
-      self.estado = "PENDIENTE"
-      self.total = 0
 
-  def confirmar(self, descuento=0):
-      if self.estado != "PENDIENTE":
-          raise OperacionNoPermitidaError(f"No se puede confirmar una reserva {self.estado}")
-      if not self.servicio.disponible:
-          raise ServicioNoDisponibleError(f"'{self.servicio.nombre}' no está disponible")
-      self.total = self.servicio.calcular_costo(self.horas, descuento)
-      self.estado = "CONFIRMADA"
-
-  def cancelar(self):
-      if self.estado == "CANCELADA":
-          raise OperacionNoPermitidaError("La reserva ya estaba cancelada")
-      self.estado = "CANCELADA"
-
-  def procesar(self, descuento=0):
-      try:
-          self.confirmar(descuento)
-      except ErrorFJ as e:
-          # encadenamiento de excepciones: se conserva el error original
-          raise ReservaInvalidaError(f"Reserva #{self.id} fallida: {e}") from e
-      else:
-          logging.info(f"Reserva #{self.id} confirmada, total ${self.total}")
-      finally:
-          logging.info(f"Fin del procesamiento de la reserva #{self.id} ({self.estado})")
-
-  def describir(self):
-      return (f"Reserva #{self.id} [{self.estado}] {self.cliente.get_nombre()} -> "
-              f"{self.servicio.nombre}, {self.horas} h, total ${self.total}")
 class Reserva(Entidad):
     def __init__(self, cliente, servicio, horas):
         super().__init__()
@@ -362,5 +325,100 @@ def abrir_ventana():
 
     ttk.Button(tab_clientes, text="Registrar cliente", command=boton_registrar_cliente).grid(row=4, column=1, sticky="e", padx=5, pady=5)
 
+
+    # ---------- Pestaña Servicios ----------
+    # Se crea la pestaña de servicios y se agrega a la ventana
+    tab_servicios = ttk.Frame(pestanas)
+    pestanas.add(tab_servicios, text="Servicios")
+    # Lista desplegable para escoger el tipo de servicio
+    ttk.Label(tab_servicios, text="Tipo").grid(row=0, column=0, sticky="w", padx=5, pady=3)
+    tipo = ttk.Combobox(tab_servicios, values=["Sala", "Equipo", "Asesoría"], state="readonly", width=32)
+    # Por defecto queda seleccionada la primera opción (Sala)
+    tipo.current(0)
+    tipo.grid(row=0, column=1, padx=5)
+    # Campo para escribir el nombre del servicio
+    ttk.Label(tab_servicios, text="Nombre").grid(row=1, column=0, sticky="w", padx=5, pady=3)
+    entrada_nombre = ttk.Entry(tab_servicios, width=35)
+    entrada_nombre.grid(row=1, column=1, padx=5)
+    # Campo para escribir la tarifa por hora
+    ttk.Label(tab_servicios, text="Tarifa por hora").grid(row=2, column=0, sticky="w", padx=5, pady=3)
+    entrada_tarifa = ttk.Entry(tab_servicios, width=35)
+    entrada_tarifa.grid(row=2, column=1, padx=5)
+    # Campo extra: cambia según el tipo (capacidad, unidades o nivel)
+    etiqueta_extra = ttk.Label(tab_servicios, text="Capacidad (número)")
+    etiqueta_extra.grid(row=3, column=0, sticky="w", padx=5, pady=3)
+    entrada_extra = ttk.Entry(tab_servicios, width=35)
+    entrada_extra.grid(row=3, column=1, padx=5)
+    # Casilla para marcar si el servicio está disponible o no
+    disponible = tk.BooleanVar(value=True)
+    ttk.Checkbutton(tab_servicios, text="Disponible", variable=disponible).grid(row=4, column=1, sticky="w", padx=5)
+    # Lista donde se muestran los servicios creados
+    lista_servicios = tk.Listbox(tab_servicios, width=80, height=8)
+    lista_servicios.grid(row=6, column=0, columnspan=2, padx=5, pady=8)
+
+    # Cambia el texto del campo extra cuando se escoge otro tipo de servicio
+    def cambiar_tipo(evento):
+        if tipo.get() == "Sala":
+            etiqueta_extra.config(text="Capacidad (número)")
+        elif tipo.get() == "Equipo":
+            etiqueta_extra.config(text="Unidades (número)")
+        else:
+            etiqueta_extra.config(text="Nivel (junior/senior/experto)")
+
+    # Cada vez que se cambia la opción de la lista se llama a cambiar_tipo
+    tipo.bind("<<ComboboxSelected>>", cambiar_tipo)
+
+    # Lo que pasa al presionar el botón "Crear servicio"
+    def boton_crear_servicio():
+        try:
+            # Se leen los datos que escribió el usuario
+            nombre = entrada_nombre.get()
+            # La tarifa se pasa a número; si no es número da ValueError
+            tarifa = float(entrada_tarifa.get())
+            extra = entrada_extra.get().strip().lower()
+            # Según el tipo se crea la clase de servicio que corresponde
+            if tipo.get() == "Sala":
+                servicio = ReservaSala(nombre, tarifa, int(extra), disponible.get())
+            elif tipo.get() == "Equipo":
+                servicio = AlquilerEquipo(nombre, tarifa, int(extra), disponible.get())
+            else:
+                servicio = AsesoriaEspecializada(nombre, tarifa, extra, disponible.get())
+            # Si no hubo errores se guarda el servicio en la lista
+            agregar_servicio(servicio)
+        except (ErrorFJ, ValueError) as e:
+            # Si algo falla se registra en el log y se muestra el error, sin cerrar el programa
+            logging.error(f"Interfaz - error al crear servicio: {e}")
+            messagebox.showerror("Error", "Datos inválidos: " + str(e))
+        else:
+            # Si todo salió bien se limpian los campos y se avisa
+            entrada_nombre.delete(0, "end")
+            entrada_tarifa.delete(0, "end")
+            entrada_extra.delete(0, "end")
+            messagebox.showinfo("Listo", "Servicio creado")
+        finally:
+            # Pase lo que pase se actualizan las listas en pantalla
+            actualizar()
+
+    # Botón que crea el servicio
+    ttk.Button(tab_servicios, text="Crear servicio", command=boton_crear_servicio).grid(row=5, column=1, sticky="e", padx=5, pady=5)
+     
+  # ---------- Actualizar listas y listas desplegables ----------
+    # actualizar(): cada estudiante agrega SOLO las líneas de su pestaña
+    def actualizar():
+        # --- COMMIT 7 (Estudiante A): clientes ---
+        lista_clientes.delete(0, "end")
+        for c in clientes:
+            lista_clientes.insert("end", c.describir())
+        # --- COMMIT 8 (Estudiante B): servicios ---
+        # Se borra la lista de servicios y se vuelve a llenar con los actuales
+        lista_servicios.delete(0, "end")
+        for sv in servicios:
+            lista_servicios.insert("end", sv.describir())
+
+    ventana.mainloop()
+
+
+if __name__ == "__main__":
+    abrir_ventana()
 
 
