@@ -322,3 +322,45 @@ def crear_reserva(cliente, servicio, horas, descuento=0):
     # Se devuelve la reserva
     return reserva
 
+
+# ------------------------- Interfaz tkinter -------------------------
+def abrir_ventana():
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+
+    ventana = tk.Tk()
+    ventana.title("Software FJ")
+    pestanas = ttk.Notebook(ventana)
+    pestanas.pack(fill="both", expand=True, padx=10, pady=10)
+
+    # ---------- Pestaña Clientes ----------
+    tab_clientes = ttk.Frame(pestanas)
+    pestanas.add(tab_clientes, text="Clientes")
+    entradas = {}
+    fila = 0
+    for campo in ["Nombre", "Documento", "Correo", "Teléfono"]:
+        ttk.Label(tab_clientes, text=campo).grid(row=fila, column=0, sticky="w", padx=5, pady=3)
+        entradas[campo] = ttk.Entry(tab_clientes, width=35)
+        entradas[campo].grid(row=fila, column=1, padx=5)
+        fila += 1
+    lista_clientes = tk.Listbox(tab_clientes, width=80, height=8)
+    lista_clientes.grid(row=6, column=0, columnspan=2, padx=5, pady=8)
+
+    def boton_registrar_cliente():
+        try:
+            registrar_cliente(entradas["Nombre"].get(), entradas["Documento"].get(),
+                              entradas["Correo"].get(), entradas["Teléfono"].get())
+        except ErrorFJ as e:
+            logging.error(f"Interfaz - {type(e).__name__}: {e}")
+            messagebox.showerror("Error", str(e))
+        else:
+            for entrada in entradas.values():
+                entrada.delete(0, "end")
+            messagebox.showinfo("Listo", "Cliente registrado")
+        finally:
+            actualizar()
+
+    ttk.Button(tab_clientes, text="Registrar cliente", command=boton_registrar_cliente).grid(row=4, column=1, sticky="e", padx=5, pady=5)
+
+
+
